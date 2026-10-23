@@ -252,22 +252,25 @@ async def stream_esp32_video(
 
     async def frame_generator():
         capture_url = f"{target_url}/capture" if not target_url.endswith("/capture") else target_url
-        async with httpx.AsyncClient(timeout=2.0) as client:
-            while True:
-                try:
-                    r = await client.get(capture_url)
-                    if r.status_code == 200 and len(r.content) > 1000:
-                        frame_bytes = r.content
-                    else:
-                        frame_bytes = make_standby_frame("ESP32 STANDBY (AWAITING PALM)")
-                except Exception:
-                    frame_bytes = make_standby_frame(f"CONNECTING TO {target_url}...")
+        try:
+            async with httpx.AsyncClient(timeout=1.5) as client:
+                while True:
+                    try:
+                        r = await client.get(capture_url)
+                        if r.status_code == 200 and len(r.content) > 1000:
+                            frame_bytes = r.content
+                        else:
+                            frame_bytes = make_standby_frame("ESP32 STANDBY (AWAITING PALM)")
+                    except Exception:
+                        frame_bytes = make_standby_frame(f"CONNECTING TO {target_url}...")
 
-                yield (
-                    b"--frame\r\n"
-                    b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
-                )
-                await asyncio.sleep(0.08)  # ~12-15 fps real-time live feed
+                    yield (
+                        b"--frame\r\n"
+                        b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
+                    )
+                    await asyncio.sleep(0.1)
+        except (asyncio.CancelledError, GeneratorExit):
+            return
 
     return StreamingResponse(
         frame_generator(),
