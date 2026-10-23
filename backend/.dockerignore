@@ -1,0 +1,55 @@
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Model weights (large files)
+model/*.pt
+model/*.pth
+model/*.onnx
+model/*.bin
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# Documentation
+*.md
+!README.md
+
+# Scripts (keep only essential)
+scripts/test_*.py

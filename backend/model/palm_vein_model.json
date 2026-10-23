@@ -1,0 +1,24 @@
+{
+  "model_version": "palm_model_v1",
+  "backbone": "resnet34",
+  "embedding_dim": 512,
+  "input_size": [
+    3,
+    224,
+    224
+  ],
+  "normalization": {
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  },
+  "training_epoch": 8,
+  "training_loss": "unknown"
+}

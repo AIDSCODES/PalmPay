@@ -1,0 +1,9 @@
+{
+  "name": "palmpay-frontend",
+  "version": "1.0.0",
+  "description": "PalmPay Biometric Payment Web Application",
+  "scripts": {
+    "dev": "python -m http.server 3000",
+    "start": "python -m http.server 3000"
+  }
+}

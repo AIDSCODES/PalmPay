@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PalmPay | Contactless Palm-Vein Biometric Payment System</title>
+  <meta name="description" content="Next-generation contactless palm vein biometric payment terminal and merchant management platform.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Main Top Navigation -->
+    <header class="app-header">
+      <div class="brand-group">
+        <div class="brand-icon-wrapper">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path>
+            <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"></path>
+            <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"></path>
+            <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path>
+          </svg>
+          <div class="brand-pulse"></div>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-title">PalmPay<span class="brand-badge">AI POS</span></h1>
+          <p class="brand-subtitle">Contactless Palm-Vein Biometric Terminal</p>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="Terminal Navigation">
+        <button type="button" class="nav-tab active" id="tab-checkout" data-target="view-checkout">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <line x1="2" y1="10" x2="22" y2="10"></line>
+          </svg>
+          <span>POS Checkout</span>
+        </button>
+        <button type="button" class="nav-tab" id="tab-enrollment" data-target="view-enrollment">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <line x1="20" y1="8" x2="20" y2="14"></line>
+            <line x1="23" y1="11" x2="17" y2="11"></line>
+          </svg>
+          <span>Enroll Palm</span>
+        </button>
+        <button type="button" class="nav-tab" id="tab-wallets" data-target="view-wallets">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+            <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+            <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+          </svg>
+          <span>Wallets & Top-Up</span>
+        </button>
+        <button type="button" class="nav-tab" id="tab-transactions" data-target="view-transactions">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <span>Transactions</span>
+        </button>
+        <button type="button" class="nav-tab" id="tab-admin" data-target="view-admin">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+            <rect x="9" y="9" width="6" height="6"></rect>
+            <line x1="9" y1="1" x2="9" y2="4"></line>
+            <line x1="15" y1="1" x2="15" y2="4"></line>
+            <line x1="9" y1="20" x2="9" y2="23"></line>
+            <line x1="15" y1="20" x2="15" y2="23"></line>
+            <line x1="20" y1="9" x2="23" y2="9"></line>
+            <line x1="20" y1="14" x2="23" y2="14"></line>
+            <line x1="1" y1="9" x2="4" y2="9"></line>
+            <line x1="1" y1="14" x2="4" y2="14"></line>
+          </svg>
+          <span>Device & Diagnostics</span>
+        </button>
+      </nav>
+
+      <div class="header-status">
+        <div class="pos-status-badge" id="terminal-badge" title="Active POS Terminal">
+          <span class="status-dot online"></span>
+          <span class="status-label" id="terminal-label">ESP32 POS Online</span>
+        </div>
+        <button type="button" class="btn-icon" id="btn-quick-config" title="Settings & Hardware Config">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+
+      <!-- VIEW 1: POS CHECKOUT (Cashier View) -->
+      <section class="view-panel active" id="view-checkout">
+        <div class="checkout-grid">
+          <!-- Left Column: Checkout Billing Form -->
+          <div class="card billing-card">
+            <div class="card-header">
+              <div class="header-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              </div>
+              <div>
+                <h2 class="card-title">Cashier Bill & Payment</h2>
+                <p class="card-subtitle">Charge customer wallet via palm scan</p>
+              </div>
+            </div>
+
+            <form id="form-checkout" class="billing-form" onsubmit="return false;">
+              <div class="amount-display-container">
+                <span class="currency-symbol">₹</span>
+                <input type="number" id="checkout-amount" class="amount-input" value="150.00" min="1" step="0.5" required>
+              </div>
+
+              <!-- Quick amount chips -->
+              <div class="quick-amounts" aria-label="Quick amount selector">
+                <button type="button" class="chip-btn" data-amount="50">₹50</button>
+                <button type="button" class="chip-btn active" data-amount="150">₹150</button>
+                <button type="button" class="chip-btn" data-amount="350">₹350</button>
+                <button type="button" class="chip-btn" data-amount="500">₹500</button>
+                <button type="button" class="chip-btn" data-amount="1200">₹1,200</button>
+              </div>
+
+              <div class="form-group">
+                <label for="checkout-desc">Order Description</label>
+                <input type="text" id="checkout-desc" class="input-control" placeholder="e.g. Cold Brew & Sandwich" value="Coffee & Snacks">
+              </div>
+
+              <div class="terminal-meta-card">
+                <div class="meta-row">
+                  <span class="meta-label">Active POS Terminal:</span>
+                  <span class="meta-value font-mono" id="display-terminal-name">Main Terminal 01 (ESP32)</span>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-label">Store / Business:</span>
+                  <span class="meta-value" id="display-store-name">Merchant Test's Store</span>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-label">Idempotency Shield:</span>
+                  <span class="meta-value status-badge badge-active font-mono" id="display-idempotency">ACTIVE</span>
+              </div>
+
+              <!-- Customer identification result card -->
+              <div class="customer-match-card hidden" id="match-result-card">
+                <div class="match-card-header">
+                  <div class="match-avatar" id="match-avatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </div>
+                  <div class="match-details">
+                    <div class="match-title-row">
+                      <h4 class="match-name" id="match-customer-name">Recognized Customer</h4>
+                      <span class="badge badge-success" id="match-confidence-badge">96.8% Match</span>
+                    </div>
+                    <p class="match-phone font-mono" id="match-customer-phone">+91 ••••• ••••</p>
+                    <p class="match-id font-mono" id="match-customer-id">UUID: ...</p>
+                  </div>
+                </div>
+
+                <div class="match-balance-row">
+                  <span class="text-secondary">Available Wallet Balance:</span>
+                  <span class="match-balance font-mono" id="match-customer-balance">₹4,900.00</span>
+                </div>
+
+                <div class="match-actions">
+                  <button type="button" class="btn btn-primary btn-block btn-pulse" id="btn-confirm-charge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Authorize & Charge Payment</span>
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-match">Cancel / Reset</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Right Column: Interactive Biometric Scanner HUD (ESP32 IR Hardware) -->
+          <div class="card scanner-card">
+            <div class="card-header scanner-header">
+              <div>
+                <h3 class="card-title">ESP32 Palm Vein IR Scanner</h3>
+                <p class="card-subtitle">Terminal Hardware: ESP32 + 850nm NIR Optical Sensor</p>
+              </div>
+              <div class="esp32-badge-wrap">
+                <span class="badge badge-cyan font-mono" id="scanner-hardware-badge">
+                  <span class="status-dot status-online"></span> ESP32 NIR HARDWARE
+                </span>
+              </div>
+            </div>
+
+            <!-- ESP32 Device Hardware Status & Endpoint Bar -->
+            <div class="esp32-endpoint-bar" id="esp32-endpoint-bar">
+              <div class="esp32-status-pill">
+                <span class="status-dot" id="esp32-status-dot"></span>
+                <span class="font-mono text-xs" id="esp32-status-badge">ESP32 READY</span>
+              </div>
+              <div class="esp32-url-input-wrap">
+                <span class="esp32-url-label font-mono">ESP32 IP:</span>
+                <input type="text" id="esp32-device-url" class="esp32-url-input font-mono" value="http://192.168.1.100" placeholder="http://192.168.x.x">
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-ping-esp32" title="Test ESP32 Connection">
+                <span>Test Ping</span>
+              </button>
+            </div>
+
+            <!-- Viewport Container -->
+            <div class="scanner-viewport-wrapper">
+              <div class="scanner-viewport" id="scanner-viewport">
+                <!-- ESP32 live MJPEG stream element -->
+                <img id="esp32-stream-img" class="camera-feed" alt="ESP32 Live IR Stream" style="display: none;">
+
+                <!-- Scanner canvas for displayed palm image from ESP32 -->
+                <canvas id="scanner-canvas" class="scanner-canvas" width="400" height="400"></canvas>
+
+                <!-- HUD Holographic Overlay -->
+                <div class="hud-overlay">
+                  <!-- Reticle Corner Brackets -->
+                  <div class="reticle-corner corner-tl"></div>
+                  <div class="reticle-corner corner-tr"></div>
+                  <div class="reticle-corner corner-bl"></div>
+                  <div class="reticle-corner corner-br"></div>
+
+                  <!-- Central Palm Contour Silhouette -->
+                  <div class="palm-silhouette" id="palm-silhouette">
+                    <svg viewBox="0 0 200 240" class="palm-contour-svg">
+                      <path d="M 60 210 C 60 180, 50 150, 40 120 C 35 105, 30 90, 40 80 C 50 70, 60 85, 65 105 C 65 75, 68 45, 80 40 C 92 35, 96 60, 96 95 C 100 65, 108 30, 120 28 C 132 26, 134 55, 132 95 C 136 70, 145 50, 155 50 C 165 50, 164 75, 160 110 C 160 135, 175 145, 175 165 C 175 195, 140 220, 100 225 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4" class="silhouette-path"/>
+                    </svg>
+                  </div>
+
+                  <!-- Sweeping Infrared Laser Line -->
+                  <div class="scan-laser-line" id="scan-laser"></div>
+
+                  <!-- HUD Grid & Metrics -->
+                  <div class="hud-metrics">
+                    <span class="hud-tag" id="hud-spectrum-tag">ESP32 850nm NIR SENSOR</span>
+                    <span class="hud-tag font-mono" id="hud-fps">ONLINE</span>
+                  </div>
+
+                  <div class="hud-target-lock" id="hud-target-lock">
+                    <div class="lock-ring"></div>
+                    <span class="lock-status" id="hud-status-text">PLACE PALM ON ESP32 SENSOR</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Scanner HUD Controls & Status -->
+              <div class="scanner-footer">
+                <div class="quality-gauge-box">
+                  <div class="gauge-label-row">
+                    <span class="text-secondary text-sm">Image Quality Score:</span>
+                    <span class="gauge-value font-mono" id="gauge-score">-- %</span>
+                  </div>
+                  <div class="quality-progress-bar">
+                    <div class="progress-fill" id="quality-progress-fill" style="width: 0%;"></div>
+                  </div>
+                </div>
+
+                <div class="scanner-btn-row">
+                  <button type="button" class="btn btn-primary btn-lg flex-1" id="btn-scan-identify">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="9"></circle>
+                      <path d="M12 3v3M12 18v3M3 12h3M18 12h3"></path>
+                    </svg>
+                    <span id="btn-scan-label">Scan with ESP32 Device</span>
+                  </button>
+
+                  <button type="button" class="btn btn-secondary" id="btn-toggle-autoscan" title="Toggle Real-Time Palm Auto-Match">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    <span id="autoscan-btn-label">Auto-Match: OFF</span>
+                  </button>
+
+                  <button type="button" class="btn btn-outline-cyan" id="btn-toggle-stream" title="Toggle Real-Time Live Feed Stream">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polygon points="10 8 16 12 10 16 10 8"></polygon>
+                    </svg>
+                    <span id="stream-btn-label">Live Stream: ON</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: BIOMETRIC ENROLLMENT (Register New Customer) -->
+      <section class="view-panel" id="view-enrollment">
+        <div class="enrollment-container">
+          <div class="card enrollment-card">
+            <div class="card-header">
+              <div class="header-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="8.5" cy="7" r="4"></circle>
+                  <line x1="20" y1="8" x2="20" y2="14"></line>
+                  <line x1="23" y1="11" x2="17" y2="11"></line>
+                </svg>
+              </div>
+              <div>
+                <h2 class="card-title">Customer Palm-Vein Biometric Enrollment</h2>
+                <p class="card-subtitle">Multi-sample enrollment with zero-retraining pgvector templates</p>
+              </div>
+            </div>
+
+            <div class="enrollment-steps-nav">
+              <div class="step-item active" id="step-nav-1">
+                <span class="step-circle">1</span>
+                <span class="step-name">Profile Details</span>
+              </div>
+              <div class="step-line"></div>
+              <div class="step-item" id="step-nav-2">
+                <span class="step-circle">2</span>
+                <span class="step-name">Palm Vein Capture (3-5 Samples)</span>
+              </div>
+              <div class="step-line"></div>
+              <div class="step-item" id="step-nav-3">
+                <span class="step-circle">3</span>
+                <span class="step-name">Biometric Verification</span>
+              </div>
+            </div>
+
+            <form id="form-enrollment" class="enrollment-form" onsubmit="return false;">
+              <!-- Step 1: User Profile -->
+              <div class="form-section" id="enroll-section-1">
+                <h3 class="section-title">Customer Contact Details</h3>
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label for="enroll-name">Full Legal Name <span class="required">*</span></label>
+                    <input type="text" id="enroll-name" class="input-control" placeholder="e.g. Aryan Sharma" required>
+                  </div>
+                  <div class="form-group flex-1">
+                    <label for="enroll-phone">Phone Number (E.164) <span class="required">*</span></label>
+                    <input type="tel" id="enroll-phone" class="input-control" placeholder="+919876543210" pattern="^\+?[1-9]\d{1,14}$" required>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label for="enroll-email">Email Address (Optional)</label>
+                    <input type="email" id="enroll-email" class="input-control" placeholder="aryan@example.com">
+                  </div>
+                  <div class="form-group flex-1">
+                    <label for="enroll-init-balance">Initial Wallet Top-Up (₹)</label>
+                    <input type="number" id="enroll-init-balance" class="input-control" value="500" min="0" step="50">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 2: Multi-Sample Biometric Acquisition -->
+              <div class="form-section" id="enroll-section-2">
+                <div class="section-title-row">
+                  <div>
+                    <h3 class="section-title">Biometric Palm Acquisition</h3>
+                    <p class="text-secondary text-sm">Strict validation requires between 3 and 5 high-clarity vein images.</p>
+                  </div>
+                  <div class="samples-count-badge" id="sample-count-badge">
+                    <span id="collected-sample-count">0</span> / 3-5 Samples
+                  </div>
+                </div>
+
+                <div class="enrollment-capture-layout">
+                  <!-- ESP32 Real-Time Capture Viewfinder -->
+                  <div class="enroll-preview-box" id="enroll-preview-box" title="ESP32 Optical Sensor Viewfinder">
+                    <canvas id="enroll-capture-canvas" width="280" height="280" class="enroll-canvas"></canvas>
+                    <div class="enroll-capture-hud">
+                      <div class="hud-target-lock">
+                        <div class="lock-ring mini"></div>
+                        <span class="lock-status" id="enroll-hud-status">ESP32 NIR SENSOR</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Controls for sample capture -->
+                  <div class="enroll-capture-controls">
+                    <p class="text-sm text-secondary">
+                      Capture biometric palm vein samples directly from the ESP32 near-infrared optical scanner.
+                    </p>
+
+                    <div class="btn-group-column">
+                      <button type="button" class="btn btn-primary" id="btn-enroll-snap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="3"></circle>
+                          <path d="M19 11v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6"></path>
+                        </svg>
+                        <span>Capture Sample from ESP32</span>
+                      </button>
+
+                      <button type="button" class="btn btn-outline-cyan" id="btn-enroll-auto-3" title="Capture 3 authentic samples from ESP32 with delay">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        <span id="auto-burst-label">Auto-Capture 3 ESP32 Samples</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Samples Gallery Carousel / Grid -->
+                <div class="samples-gallery-wrapper">
+                  <h4 class="samples-gallery-title">Collected Enrollment Samples:</h4>
+                  <div class="samples-gallery" id="samples-gallery">
+                    <div class="sample-placeholder-card">
+                      <span class="placeholder-icon">+</span>
+                      <span>No samples yet</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Submit button -->
+              <div class="enrollment-actions">
+                <button type="button" class="btn btn-primary btn-lg" id="btn-submit-enrollment" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span>Register User & Save Biometric Templates</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="btn-clear-enrollment">Reset Form</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: WALLETS & TOP-UP -->
+      <section class="view-panel" id="view-wallets">
+        <div class="wallets-grid">
+          <!-- Left: User selector & Topup Form -->
+          <div class="card wallet-action-card">
+            <div class="card-header">
+              <div class="header-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                  <path d="M12 11a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="card-title">Manage Customer Wallet</h3>
+                <p class="card-subtitle">Instant balance lookup and admin top-up</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="wallet-user-select">Select Customer</label>
+              <select id="wallet-user-select" class="input-control font-mono">
+                <option value="">-- Choose Enrolled User --</option>
+              </select>
+            </div>
+
+            <div class="wallet-balance-card" id="wallet-card-container">
+              <div class="wallet-chip-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </div>
+              <div class="wallet-meta">
+                <span class="wallet-label">Available Balance</span>
+                <div class="wallet-amount-row">
+                  <span class="currency-symbol">₹</span>
+                  <span class="wallet-big-number font-mono" id="wallet-balance-display">0.00</span>
+                </div>
+                <div class="wallet-status-row">
+                  <span class="text-sm font-mono text-secondary" id="wallet-user-name">No User Selected</span>
+                  <span class="badge badge-success" id="wallet-status-badge">ACTIVE</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="topup-form-group">
+              <h4 class="topup-heading">Add Funds (Admin Top-Up)</h4>
+              <div class="amount-display-container">
+                <span class="currency-symbol">₹</span>
+                <input type="number" id="topup-amount" class="amount-input" value="500" min="10" step="50">
+              </div>
+
+              <div class="quick-amounts">
+                <button type="button" class="chip-btn" data-topup="200">+₹200</button>
+                <button type="button" class="chip-btn active" data-topup="500">+₹500</button>
+                <button type="button" class="chip-btn" data-topup="1000">+₹1,000</button>
+                <button type="button" class="chip-btn" data-topup="5000">+₹5,000</button>
+              </div>
+
+              <div class="form-group">
+                <label for="topup-desc">Top-Up Note</label>
+                <input type="text" id="topup-desc" class="input-control" value="Cash deposit at terminal">
+              </div>
+
+              <button type="button" class="btn btn-primary btn-block" id="btn-submit-topup">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Add Balance to Wallet</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Right: Customer Transaction Ledger -->
+          <div class="card wallet-history-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Customer Ledger & Statement</h3>
+                <p class="card-subtitle">Recent charges, refunds, and top-ups</p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-user-tx">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                </svg>
+                <span>Refresh</span>
+              </button>
+            </div>
+
+            <div class="table-container">
+              <table class="data-table" id="table-user-transactions">
+                <thead>
+                  <tr>
+                    <th>Reference</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date / Time</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-user-transactions">
+                  <tr>
+                    <td colspan="6" class="text-center text-muted">Select a customer above to view their statement.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: TRANSACTIONS (All Transactions) -->
+      <section class="view-panel" id="view-transactions">
+        <div class="card full-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Live Transaction Ledger</h2>
+              <p class="card-subtitle">Comprehensive audit trail of palm-vein payments across all terminals</p>
+            </div>
+            <div class="header-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-all-tx">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                </svg>
+                <span>Refresh Feed</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table" id="table-all-transactions">
+              <thead>
+                <tr>
+                  <th>Transaction Reference</th>
+                  <th>Customer User</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Timestamp</th>
+                  <th>Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-all-transactions">
+                <tr>
+                  <td colspan="7" class="text-center text-muted">Loading transaction feed...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 5: DEVICE & ADMIN DIAGNOSTICS -->
+      <section class="view-panel" id="view-admin">
+        <div class="admin-grid">
+          <!-- Card 1: Active Terminal Configuration -->
+          <div class="card">
+            <div class="card-header">
+              <div class="header-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                  <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                  <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                  <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                </svg>
+              </div>
+              <div>
+                <h3 class="card-title">Active POS Hardware Terminal</h3>
+                <p class="card-subtitle">Device credentials for payment processing</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-device-id">Device ID (UUID)</label>
+              <input type="text" id="cfg-device-id" class="input-control font-mono" value="e8b9252d-c48a-4f38-ae94-10a1a46dffe1">
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-device-key">Device Secret Key</label>
+              <input type="password" id="cfg-device-key" class="input-control font-mono" value="ZuqDrnh4-U2slC9A3odO0_r3UqJcjqcn-qwgcqrBkCg">
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-admin-key">Admin Master API Key</label>
+              <input type="password" id="cfg-admin-key" class="input-control font-mono" value="your-admin-api-key-change-in-production">
+            </div>
+
+            <div class="btn-group-row">
+              <button type="button" class="btn btn-secondary flex-1" id="btn-test-device-auth">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Test Connection</span>
+              </button>
+              <button type="button" class="btn btn-primary flex-1" id="btn-save-device-cfg">Save Config</button>
+            </div>
+          </div>
+
+          <!-- Card 2: Biometric AI Model Telemetry -->
+          <div class="card">
+            <div class="card-header">
+              <div class="header-icon-box cyan">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+              </div>
+              <div>
+                <h3 class="card-title">AI Biometric Model Telemetry</h3>
+                <p class="card-subtitle">PyTorch CNN palm vein embedding engine</p>
+              </div>
+            </div>
+
+            <div class="telemetry-list">
+              <div class="telemetry-item">
+                <span class="telemetry-key">Model Version:</span>
+                <span class="telemetry-value font-mono" id="ai-model-version">palm_model_v1</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="telemetry-key">Model Architecture:</span>
+                <span class="telemetry-value font-mono" id="ai-model-type">PalmVeinModel (PyTorch)</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="telemetry-key">Embedding Dimensions:</span>
+                <span class="telemetry-value font-mono" id="ai-model-dim">512-dim Float Vector</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="telemetry-key">Similarity Search:</span>
+                <span class="telemetry-value font-mono">Cosine Similarity (pgvector / HNSW)</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="telemetry-key">Match Threshold:</span>
+                <span class="telemetry-value font-mono">0.75 Cosine Similarity</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="telemetry-key">Liveness Anti-Spoofing:</span>
+                <span class="telemetry-value status-badge badge-active font-mono" id="ai-liveness-status">REAL-TIME / ACTIVE</span>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-secondary btn-block" id="btn-check-model-status">
+              <span>Query AI Status</span>
+            </button>
+          </div>
+
+          <!-- Card 3: System Health -->
+          <div class="card">
+            <div class="card-header">
+              <div class="header-icon-box emerald">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="card-title">Backend Health & Engine</h3>
+                <p class="card-subtitle">FastAPI microservice status</p>
+              </div>
+            </div>
+
+            <div class="telemetry-list">
+              <div class="telemetry-item">
+                <span class="telemetry-key">API Status:</span>
+                <span class="telemetry-value status-badge badge-active" id="health-api-status">OK (200)</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="telemetry-key">Database:</span>
+                <span class="telemetry-value font-mono" id="health-db-status">SQLite (palmpay.db)</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="telemetry-key">Environment:</span>
+                <span class="telemetry-value font-mono">development</span>
+              </div>
+              <div class="telemetry-item">
+                <span class="telemetry-key">CORS Policy:</span>
+                <span class="telemetry-value font-mono">Enabled (*)</span>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-secondary btn-block" id="btn-ping-health">
+              <span>Run System Health Check</span>
+            </button>
+          </div>
+
+          <!-- Card 4: Register New POS Device -->
+          <div class="card">
+            <div class="card-header">
+              <div class="header-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="16"></line>
+                  <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+              </div>
+              <div>
+                <h3 class="card-title">Register New Hardware Terminal</h3>
+                <p class="card-subtitle">Add ESP32 or POS scanner device</p>
+              </div>
+            </div>
+
+            <form id="form-register-device" onsubmit="return false;">
+              <div class="form-group">
+                <label for="reg-dev-name">Terminal Name</label>
+                <input type="text" id="reg-dev-name" class="input-control" placeholder="e.g. Counter 02 Scanner" value="Counter 02 ESP32" required>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group flex-1">
+                  <label for="reg-dev-type">Device Type</label>
+                  <select id="reg-dev-type" class="input-control">
+                    <option value="ESP32">ESP32 + NIR Cam</option>
+                    <option value="POS_TERMINAL">Android POS</option>
+                    <option value="KIOSK">Self-Checkout Kiosk</option>
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label for="reg-dev-fw">Firmware</label>
+                  <input type="text" id="reg-dev-fw" class="input-control" value="v1.2.0">
+                </div>
+              </div>
+
+              <button type="button" class="btn btn-primary btn-block" id="btn-submit-reg-device">
+                <span>Register Hardware & Generate Key</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Registered Users Management Table -->
+        <div class="card full-card mt-6">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">User Accounts & Biometric Enrollment Status</h3>
+              <p class="card-subtitle">Registered identities and account statuses</p>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-admin-users">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+              </svg>
+              <span>Refresh Users</span>
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table" id="table-admin-users">
+              <thead>
+                <tr>
+                  <th>User ID</th>
+                  <th>Full Name</th>
+                  <th>Phone Number</th>
+                  <th>Account Status</th>
+                  <th>Created At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-admin-users">
+                <tr>
+                  <td colspan="6" class="text-center text-muted">Loading users...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Modal Dialog: Digital Payment Receipt -->
+    <dialog class="modal-dialog" id="modal-receipt">
+      <div class="receipt-container">
+        <div class="receipt-header">
+          <div class="receipt-success-badge">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h2 class="receipt-title">Payment Successful!</h2>
+          <p class="receipt-sub">Contactless Palm Vein Authentication Approved</p>
+        </div>
+
+        <div class="receipt-amount-box">
+          <span class="currency-symbol">₹</span>
+          <span class="receipt-amount font-mono" id="receipt-amount">0.00</span>
+        </div>
+
+        <div class="receipt-rows">
+          <div class="receipt-row">
+            <span class="text-secondary">Transaction Reference:</span>
+            <span class="font-mono text-bold" id="receipt-tx-ref">TX-XXXX</span>
+          </div>
+          <div class="receipt-row">
+            <span class="text-secondary">Customer:</span>
+            <span id="receipt-customer-name">--</span>
+          </div>
+          <div class="receipt-row">
+            <span class="text-secondary">Remaining Wallet Balance:</span>
+            <span class="font-mono text-emerald" id="receipt-remaining-balance">₹0.00</span>
+          </div>
+          <div class="receipt-row">
+            <span class="text-secondary">Merchant:</span>
+            <span id="receipt-merchant">Merchant Test's Store</span>
+          </div>
+          <div class="receipt-row">
+            <span class="text-secondary">POS Terminal:</span>
+            <span class="font-mono" id="receipt-terminal">ESP32 Main Terminal</span>
+          </div>
+          <div class="receipt-row">
+            <span class="text-secondary">Date & Time:</span>
+            <span class="font-mono" id="receipt-timestamp">--</span>
+          </div>
+        </div>
+
+        <div class="receipt-footer">
+          <button type="button" class="btn btn-primary btn-block" id="btn-close-receipt">Done / New Transaction</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

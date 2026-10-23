@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: palmpay-postgres
+    environment:
+      POSTGRES_USER: palmpay
+      POSTGRES_PASSWORD: palmpay
+      POSTGRES_DB: palmpay
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U palmpay -d palmpay"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: palmpay-backend
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://palmpay:palmpay@postgres:5432/palmpay
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - USE_MOCK_MODEL=true
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./model:/app/model
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
