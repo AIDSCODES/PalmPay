@@ -360,15 +360,26 @@ async def trigger_esp32_capture(
 async def esp32_upload_scan(
     device_id: UUID,
     request: Request,
-    image: UploadFile = File(...),
+    image: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
     request_id: str = Depends(get_request_id)
 ):
     """
     Direct upload endpoint for ESP32 hardware to send palm scans over WiFi.
+    Supports both multipart/form-data ('image' field) and raw binary image/jpeg payloads.
     """
     import base64
-    content = await image.read()
+    content = None
+    if image is not None:
+        content = await image.read()
+    else:
+        body = await request.body()
+        if body and len(body) > 100:
+            content = body
+
+    if not content:
+        raise HTTPException(status_code=400, detail="No image payload received from ESP32")
+
     image_b64 = base64.b64encode(content).decode("utf-8")
 
     biometric_service = BiometricService(db)

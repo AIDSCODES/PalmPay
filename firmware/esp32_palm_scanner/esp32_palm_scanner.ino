@@ -3,16 +3,19 @@
  * -------------------------------------------------------------
  * Target Hardware : ESP32-CAM (AI-Thinker OV2640 module)
  * Optical Spectrum: 850nm Near-Infrared (NIR)
+ * Live Website    : https://palmpay-frontend.vercel.app/
  * 
  * Features:
- *   - OV2640 Camera Driver with NIR-optimized sensor registers
- *   - 850nm IR LED Illuminator control (GPIO 4 or external MOSFET)
+ *   - OV2640 Camera Driver calibrated for 850nm Near-Infrared absorption
+ *   - 850nm IR LED Illuminator control (GPIO 4)
  *   - Proximity / Hand Detection trigger (GPIO 13 or push button)
- *   - HTTP Endpoints:
+ *   - Dual HTTP Client (HTTP & HTTPS with WiFiClientSecure) for direct upload
+ *   - WebServer with full CORS support (interoperable with hosted Web Apps):
  *       GET /         -> Device telemetry & system info (JSON)
  *       GET /ping     -> Rapid 200 OK health check
  *       GET /capture  -> Single NIR JPEG frame (used by PalmPay POS)
- *       GET /stream   -> Real-time MJPEG stream (30 fps preview)
+ *       GET /stream   -> Real-time MJPEG live stream (port 81)
+ *       GET /trigger  -> Remotely triggers IR scan & pushes to server
  *   - Push Client Mode:
  *       Auto-POSTs JPEG directly to PalmPay server on palm detection
  */
@@ -22,22 +25,33 @@
 #include <WebServer.h>
 #include <HTTPClient.h>
 #include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 
 // =========================================================================
 // 1. NETWORK & PALMPAY SERVER CONFIGURATION
 // =========================================================================
 
-const char* WIFI_SSID     = "YOUR_WIFI_SSID";
-const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+// Your Wi-Fi network credentials
+const char* WIFI_SSID     = "T3x";
+const char* WIFI_PASSWORD = "12345678";
 
-// PalmPay Backend URL (IP of the computer running FastAPI backend)
-const char* PALMPAY_SERVER_URL = "http://192.168.1.50:8000";
-const char* DEVICE_ID          = "e8b9252d-c48a-4f38-ae94-10a1a46dffe1"; // From Admin Panel
+/**
+ * PalmPay Backend Server Endpoint:
+ * 
+ * OPTION A (Local Network - Default):
+ *   Use your computer's local Wi-Fi IP address running FastAPI (port 8000).
+ *   Current active host IP: "http://10.35.113.35:8000"
+ * 
+ * OPTION B (Public HTTPS Tunnel for https://palmpay-frontend.vercel.app):
+ *   If accessing from Vercel without local network access, expose your local backend
+ *   using localtunnel or ngrok (e.g. "npx localtunnel --port 8000")
+ *   and paste the HTTPS URL below:
+ *   Example: "https://palmpay-api.loca.lt"
+ */
+const char* PALMPAY_SERVER_URL = "http://10.35.113.35:8000";
 
-// Set static IP if desired (comment out for DHCP)
-// IPAddress local_IP(192, 168, 1, 100);
-// IPAddress gateway(192, 168, 1, 1);
-// IPAddress subnet(255, 255, 255, 0);
+// Device Hardware Identifier (must match Registered Device ID in PalmPay Admin)
+const char* DEVICE_ID = "e8b9252d-c48a-4f38-ae94-10a1a46dffe1";
 
 // =========================================================================
 // 2. PIN DEFINITIONS (AI-THINKER ESP32-CAM)
@@ -142,10 +156,22 @@ bool initCamera() {
 }
 
 // =========================================================================
-// 5. HTTP SERVER HANDLERS
+// 5. HTTP SERVER HANDLERS (WITH FULL CORS FOR WEB APP)
 // =========================================================================
 
+void setCorsHeaders() {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  server.sendHeader("Access-Control-Allow-Headers", "*");
+}
+
+void handleOptions() {
+  setCorsHeaders();
+  server.send(204);
+}
+
 void handleRoot() {
+  setCorsHeaders();
   String json = "{";
   json += "\"device\":\"ESP32-CAM\",";
   json += "\"system\":\"PalmPay IR Biometric Scanner\",";
@@ -153,18 +179,19 @@ void handleRoot() {
   json += "\"ip\":\"" + WiFi.localIP().toString() + "\",";
   json += "\"rssi\":" + String(WiFi.RSSI()) + ",";
   json += "\"uptime_sec\":" + String(millis() / 1000) + ",";
-  json += "\"endpoints\":[\"/ping\",\"/capture\",\"/stream\"]";
+  json += "\"endpoints\":[\"/ping\",\"/capture\",\"/stream\",\"/trigger\"]";
   json += "}";
-  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", json);
 }
 
 void handlePing() {
-  server.sendHeader("Access-Control-Allow-Origin", "*");
+  setCorsHeaders();
   server.send(200, "text/plain", "pong");
 }
 
 void handleCapture() {
+  setCorsHeaders();
+
   // Flash IR Illuminator LED for optimal exposure
   digitalWrite(IR_LED_PIN, HIGH);
   delay(60); // Allow sensor auto-gain to settle under NIR lighting
@@ -178,12 +205,20 @@ void handleCapture() {
     return;
   }
 
-  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.sendHeader("Content-Disposition", "inline; filename=palm_scan.jpg");
   server.send_P(200, "image/jpeg", (const char *)fb->buf, fb->len);
 
   Serial.printf("[CAPTURE] Served frame size: %u bytes\n", fb->len);
   esp_camera_fb_return(fb);
+}
+
+// Remote Trigger: Web app requests ESP32 to scan & push to backend
+void handleTrigger() {
+  setCorsHeaders();
+  Serial.println("[REMOTE] Received /trigger command from PalmPay Web App");
+  bool ok = sendScanToBackend();
+  String res = "{\"success\":" + String(ok ? "true" : "false") + ",\"action\":\"palm_scan_pushed\"}";
+  server.send(ok ? 200 : 500, "application/json", res);
 }
 
 // MJPEG Stream Task
@@ -217,11 +252,11 @@ void handleStream() {
 }
 
 // =========================================================================
-// 6. PUSH CLIENT MODE (Direct Upload to PalmPay Backend)
+// 6. PUSH CLIENT MODE (Direct Upload to PalmPay Backend - HTTP & HTTPS)
 // =========================================================================
 
 bool sendScanToBackend() {
-  Serial.println("[SCAN] Triggered: Capturing palm frame for direct push...");
+  Serial.println("\n[SCAN] Capturing NIR palm frame for PalmPay processing...");
   
   digitalWrite(IR_LED_PIN, HIGH);
   delay(80);
@@ -229,13 +264,32 @@ bool sendScanToBackend() {
   digitalWrite(IR_LED_PIN, LOW);
 
   if (!fb) {
-    Serial.println("[ERROR] Failed to get camera frame");
+    Serial.println("[ERROR] Failed to get camera frame buffer");
     return false;
   }
 
-  HTTPClient http;
   String uploadUrl = String(PALMPAY_SERVER_URL) + "/api/v1/devices/" + String(DEVICE_ID) + "/upload-scan";
-  http.begin(uploadUrl);
+  Serial.printf("[UPLOAD] Sending to: %s\n", uploadUrl.c_str());
+
+  HTTPClient http;
+  WiFiClient regularClient;
+  WiFiClientSecure secureClient;
+  bool isHttps = uploadUrl.startsWith("https://");
+
+  if (isHttps) {
+    secureClient.setInsecure(); // Bypass cert verification for embedded device
+    if (!http.begin(secureClient, uploadUrl)) {
+      Serial.println("[ERROR] Failed to initialize HTTPS connection");
+      esp_camera_fb_return(fb);
+      return false;
+    }
+  } else {
+    if (!http.begin(regularClient, uploadUrl)) {
+      Serial.println("[ERROR] Failed to initialize HTTP connection");
+      esp_camera_fb_return(fb);
+      return false;
+    }
+  }
 
   String boundary = "----PalmPayBoundary" + String(millis());
   http.addHeader("Content-Type", "multipart/form-data; boundary=" + boundary);
@@ -248,9 +302,9 @@ bool sendScanToBackend() {
   uint32_t totalLen = head.length() + fb->len + tail.length();
   http.addHeader("Content-Length", String(totalLen));
 
-  uint8_t *payload = (uint8_t *)malloc(totalLen);
+  uint8_t *payload = psramFound() ? (uint8_t *)ps_malloc(totalLen) : (uint8_t *)malloc(totalLen);
   if (!payload) {
-    Serial.println("[ERROR] Out of memory for upload buffer");
+    Serial.println("[ERROR] Out of memory allocating upload buffer");
     esp_camera_fb_return(fb);
     http.end();
     return false;
@@ -265,11 +319,12 @@ bool sendScanToBackend() {
   esp_camera_fb_return(fb);
 
   if (httpCode > 0) {
-    Serial.printf("[OK] Upload returned HTTP %d: %s\n", httpCode, http.getString().c_str());
+    String resp = http.getString();
+    Serial.printf("[OK] PalmPay Server Response (HTTP %d): %s\n", httpCode, resp.c_str());
     http.end();
     return (httpCode == 200 || httpCode == 201);
   } else {
-    Serial.printf("[ERROR] HTTP POST failed, error: %s\n", http.errorToString(httpCode).c_str());
+    Serial.printf("[ERROR] HTTP POST failed, code: %d (%s)\n", httpCode, http.errorToString(httpCode).c_str());
     http.end();
     return false;
   }
@@ -282,9 +337,10 @@ bool sendScanToBackend() {
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("\n==========================================");
-  Serial.println("  PalmPay ESP32 Palm Vein IR Scanner");
-  Serial.println("==========================================");
+  Serial.println("\n==================================================");
+  Serial.println("  PalmPay ESP32 NIR Palm Vein Scanner v1.3");
+  Serial.println("  Website: https://palmpay-frontend.vercel.app/");
+  Serial.println("==================================================");
 
   pinMode(IR_LED_PIN, OUTPUT);
   digitalWrite(IR_LED_PIN, LOW);
@@ -303,48 +359,54 @@ void setup() {
   }
 
   // Connect to WiFi
-  Serial.printf("[WIFI] Connecting to SSID: %s\n", WIFI_SSID);
+  Serial.printf("[WIFI] Connecting to SSID: %s ...\n", WIFI_SSID);
   WiFi.mode(WIFI_STA);
-  // WiFi.config(local_IP, gateway, subnet); // Uncomment if using static IP
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 25) {
+  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
     delay(500);
     Serial.print(".");
     attempts++;
   }
 
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\n[WIFI] Connected!");
-    Serial.printf("[WIFI] IP Address: http://%s\n", WiFi.localIP().toString().c_str());
-    Serial.printf("[WIFI] Signal Strength: %d dBm\n", WiFi.RSSI());
+    Serial.println("\n[WIFI] Connected Successfully!");
+    Serial.printf("[WIFI] Local IP Address : http://%s\n", WiFi.localIP().toString().c_str());
+    Serial.printf("[WIFI] Live Stream URL  : http://%s:81/\n", WiFi.localIP().toString().c_str());
+    Serial.printf("[WIFI] Single Frame URL : http://%s/capture\n", WiFi.localIP().toString().c_str());
+    Serial.printf("[WIFI] Target Backend   : %s\n", PALMPAY_SERVER_URL);
+    Serial.println("\n>>> Enter this ESP32 URL on the PalmPay Website:");
+    Serial.printf("    http://%s\n", WiFi.localIP().toString().c_str());
   } else {
-    Serial.println("\n[WIFI] Failed to connect. Check credentials.");
+    Serial.println("\n[WIFI] Failed to connect to Wi-Fi. Check SSID and Password.");
   }
 
   // Setup Web Server routes
   server.on("/", HTTP_GET, handleRoot);
   server.on("/ping", HTTP_GET, handlePing);
   server.on("/capture", HTTP_GET, handleCapture);
+  server.on("/trigger", HTTP_GET, handleTrigger);
+  server.onNotFound(handleOptions); // Handles CORS preflight OPTIONS
+
   server.begin();
   streamServer.begin();
 
   Serial.println("[SERVER] Palm Scanner HTTP server ready on port 80.");
-  Serial.println("[SERVER] Real-time live stream ready on port 81 and /capture on port 80.");
-  Serial.println("[REALTIME] Optical auto-detection and hardware trigger active.\n");
+  Serial.println("[SERVER] Real-time live video stream active on port 81.");
+  Serial.println("[SERVER] Ready for palm scans!\n");
 }
 
 void loop() {
   server.handleClient();
   handleStream();
 
-  // 1. Hardware proximity sensor trigger (push button / optical switch on GPIO 13)
+  // 1. Hardware proximity switch or manual trigger on GPIO 13
   bool hwTriggered = (digitalRead(PROXIMITY_PIN) == LOW);
 
   if (hwTriggered && (millis() - lastTriggerTime > TRIGGER_COOLDOWN_MS)) {
     lastTriggerTime = millis();
-    Serial.println("[REALTIME] Hardware proximity trigger detected!");
+    Serial.println("[TRIGGER] Hardware proximity/button trigger detected!");
     sendScanToBackend();
   }
 

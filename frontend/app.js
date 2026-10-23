@@ -422,25 +422,72 @@
     }
   }
 
+  let lastProcessedScanTimestamp = null;
+
+  async function handleIncomingEsp32Scan(scan) {
+    if (!scan || state.isIdentifying) return;
+    state.isIdentifying = true;
+
+    if (elements.scanLaser) elements.scanLaser.classList.add('active');
+    if (elements.hudStatusText) elements.hudStatusText.textContent = 'ESP32 HARDWARE SCAN DETECTED...';
+
+    try {
+      // Render the scanned palm image on the canvas
+      if (scan.image && elements.scannerCanvas) {
+        elements.scannerCanvas.style.display = 'block';
+        const img = new Image();
+        img.onload = () => {
+          const ctx = elements.scannerCanvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, elements.scannerCanvas.width, elements.scannerCanvas.height);
+        };
+        img.src = `data:image/jpeg;base64,${scan.image}`;
+      }
+
+      const qualityPct = Math.round((scan.similarity || 0.88) * 100);
+      if (elements.gaugeScore) elements.gaugeScore.textContent = `${qualityPct}%`;
+      if (elements.qualityProgressFill) elements.qualityProgressFill.style.width = `${qualityPct}%`;
+
+      if (scan.matched && scan.user_id) {
+        const confidence = (scan.similarity * 100).toFixed(1);
+        playAudioTone('success');
+        showToast(`ESP32 Palm Vein Matched! (${confidence}% confidence)`, 'success');
+        if (elements.hudStatusText) elements.hudStatusText.textContent = `MATCHED: ${confidence}%`;
+        await loadMatchedCustomer(scan.user_id, confidence);
+      } else {
+        playAudioTone('error');
+        showToast('ESP32 Palm detected, but no matching registered user found', 'warning');
+        if (elements.hudStatusText) elements.hudStatusText.textContent = 'NO MATCH DETECTED';
+        if (elements.matchResultCard) elements.matchResultCard.classList.add('hidden');
+      }
+    } finally {
+      setTimeout(() => {
+        if (elements.scanLaser) elements.scanLaser.classList.remove('active');
+        state.isIdentifying = false;
+      }, 1000);
+    }
+  }
+
   function startEsp32AutoPoll() {
     stopEsp32AutoPoll();
     state.esp32AutoPollInterval = setInterval(async () => {
-      if (!state.autoScanActive || state.isIdentifying || state.matchedCustomer) return;
+      if (state.isIdentifying || state.matchedCustomer) return;
       try {
-        const res = await apiRequest(`/api/v1/devices/${state.deviceId}/latest-scan`).catch(() => null);
+        const sinceParam = lastProcessedScanTimestamp ? `?since=${encodeURIComponent(lastProcessedScanTimestamp)}` : '';
+        const res = await apiRequest(`/api/v1/devices/${state.deviceId}/latest-scan${sinceParam}`).catch(() => null);
         if (res && res.has_scan && res.scan) {
-          handleScanAndIdentify();
+          lastProcessedScanTimestamp = res.scan.timestamp;
+          await handleIncomingEsp32Scan(res.scan);
           return;
         }
 
-        // Active continuous real-time scan when ESP32 is online
-        if (state.esp32Online) {
+        // Active continuous real-time scan when Auto-Match switch is ON and ESP32 is online
+        if (state.autoScanActive && state.esp32Online) {
           handleScanAndIdentify();
         }
       } catch {
         // Silent poll
       }
-    }, 2000);
+    }, 1500);
   }
 
   function stopEsp32AutoPoll() {
@@ -1400,6 +1447,9 @@
 
     // Start real-time live video stream from ESP32
     startEsp32LiveStream();
+
+    // Start ESP32 hardware scan listener
+    startEsp32AutoPoll();
 
     // Start real-time background synchronization
     startRealTimePolling();
