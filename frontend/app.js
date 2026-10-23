@@ -8,7 +8,7 @@
 
   // Configuration & State
   const state = {
-    apiBase: window.location.origin.includes(':8000') ? window.location.origin : 'http://127.0.0.1:8000',
+    apiBase: localStorage.getItem('palmpay_api_base') || (window.location.origin.includes(':8000') ? window.location.origin : 'http://127.0.0.1:8000'),
     adminKey: localStorage.getItem('palmpay_admin_key') || 'your-admin-api-key-change-in-production',
     deviceId: localStorage.getItem('palmpay_device_id') || 'e8b9252d-c48a-4f38-ae94-10a1a46dffe1',
     deviceKey: localStorage.getItem('palmpay_device_key') || 'ZuqDrnh4-U2slC9A3odO0_r3UqJcjqcn-qwgcqrBkCg',
@@ -99,6 +99,7 @@
     tbodyAllTransactions: document.getElementById('tbody-all-transactions'),
 
     // View 5: Admin & Hardware
+    cfgApiBase: document.getElementById('cfg-api-base'),
     cfgDeviceId: document.getElementById('cfg-device-id'),
     cfgDeviceKey: document.getElementById('cfg-device-key'),
     cfgAdminKey: document.getElementById('cfg-admin-key'),
@@ -1100,6 +1101,10 @@
   }
 
   function handleSaveDeviceConfig() {
+    if (elements.cfgApiBase) {
+      state.apiBase = elements.cfgApiBase.value.trim().replace(/\/+$/, '') || 'http://127.0.0.1:8000';
+      localStorage.setItem('palmpay_api_base', state.apiBase);
+    }
     state.deviceId = elements.cfgDeviceId.value.trim();
     state.deviceKey = elements.cfgDeviceKey.value.trim();
     state.adminKey = elements.cfgAdminKey.value.trim();
@@ -1108,7 +1113,7 @@
     localStorage.setItem('palmpay_device_key', state.deviceKey);
     localStorage.setItem('palmpay_admin_key', state.adminKey);
 
-    showToast('Terminal hardware configuration saved!', 'success');
+    showToast('Terminal hardware & API configuration saved!', 'success');
   }
 
   async function handleCheckModelStatus() {
@@ -1380,6 +1385,7 @@
     initEventListeners();
 
     // Set default values in Admin inputs
+    if (elements.cfgApiBase) elements.cfgApiBase.value = state.apiBase;
     if (elements.cfgDeviceId) elements.cfgDeviceId.value = state.deviceId;
     if (elements.cfgDeviceKey) elements.cfgDeviceKey.value = state.deviceKey;
     if (elements.cfgAdminKey) elements.cfgAdminKey.value = state.adminKey;
